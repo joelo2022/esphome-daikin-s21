@@ -42,7 +42,6 @@ void DaikinS21Climate::dump_config() {
 climate::ClimateTraits DaikinS21Climate::traits() {
   auto traits = climate::ClimateTraits();
 
-  traits.set_supports_current_temperature(true);
   traits.set_visual_min_temperature(SETPOINT_MIN);
   traits.set_visual_max_temperature(SETPOINT_MAX);
   traits.set_visual_temperature_step(SETPOINT_STEP);
@@ -356,8 +355,8 @@ void DaikinS21Climate::update() {
 
 void DaikinS21Climate::control(const climate::ClimateCall &call) {
   float setpoint = this->target_temperature;
-  const char *fan_mode = this->custom_fan_mode_ != nullptr ? this->custom_fan_mode_ : "Automatic";
-  bool set_basic = false;
+  auto cfm_ref = this->get_custom_fan_mode();
+  const char *fan_mode = (cfm_ref.c_str() != nullptr && strlen(cfm_ref.c_str()) > 0) ? cfm_ref.c_str() : "Automatic";  bool set_basic = false;
 
   if (call.get_mode().has_value()) {
     climate::ClimateMode climate_mode = call.get_mode().value();
@@ -400,7 +399,8 @@ void DaikinS21Climate::control(const climate::ClimateCall &call) {
 void DaikinS21Climate::set_s21_climate() {
   this->expected_s21_setpoint =
       this->calc_s21_setpoint(this->target_temperature);
-  const char *fan = this->custom_fan_mode_ != nullptr ? this->custom_fan_mode_ : "Automatic";
+  auto cfm_ref2 = this->get_custom_fan_mode();
+  const char *fan = (cfm_ref2.c_str() != nullptr && strlen(cfm_ref2.c_str()) > 0) ? cfm_ref2.c_str() : "Automatic";
   ESP_LOGI(TAG, "Controlling S21 climate:");
   ESP_LOGI(TAG, "  Mode: %s", climate::climate_mode_to_string(this->mode));
   ESP_LOGI(TAG, "  Setpoint: %.1f (s21: %.1f)", this->target_temperature,
